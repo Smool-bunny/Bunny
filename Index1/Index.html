@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunny Medicine Tracker</title>
+    <style>
+        /* Color palette */
+        :root {
+            --color1: #A66CFF;
+            --color2: #9C9EFE;
+            --color3: #B1E1FF;
+            --color4: #AFB4FF;
+            --pixel-size: 4px;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: var(--color4);
+            color: var(--color1);
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        h1 {
+            color: var(--color1);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            letter-spacing: 1px;
+        }
+
+        .day-container {
+            margin-bottom: 15px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--color1);
+        }
+
+        .day-header {
+            background-color: var(--color3);
+            color: white;
+            padding: 8px 12px;
+            margin: -10px -10px 10px -10px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dose {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: var(--color4);
+            border-radius: 5px;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--color2);
+            margin-right: 15px;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .checkbox.checked {
+            background-color: var(--color2);
+        }
+
+        .checkbox.checked::after {
+            content: "✓";
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .dose-time {
+            margin-right: auto;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #B1E1FF;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, var(--color1), var(--color2));
+            width: 0%;
+            transition: width 0.5s;
+        }
+
+        .message-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background-color: var(--color2);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.5s;
+            z-index: 100;
+        }
+
+        .message-popup.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .bunny-image {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            margin-top: 10px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: none;
+        }
+
+        .bunny-image.show {
+            opacity: 1;
+            display: block;
+        }
+
+        .current-date {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--color1);
+        }
+
+        .completed-day {
+            opacity: 0.8;
+        }
+
+        .today {
+            border: 3px dashed var(--color1);
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 15px;
+            color: white;
+        }
+
+        /* Pixel art elements */
+        .pixel-heart {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: var(--color2);
+            position: relative;
+            transform: rotate(45deg);
+            margin-right: 5px;
+        }
+
+        .pixel-heart::before,
+        .pixel-heart::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: var(--color2);
+            border-radius: 50%;
+        }
+
+        .pixel-heart::before {
+            top: -10px;
+            left: 0;
+        }
+
+        .pixel-heart::after {
+            top: 0;
+            left: -10px;
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 10px;
+                font-size: 16px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .day-container {
+                margin-bottom: 10px;
+                padding: 8px;
+            }
+
+            .day-header {
+                padding: 5px 8px;
+            }
+
+            .pixel-border {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="pixel-border">
+        <h1>Bunny Medicine Tracker</h1>
+        <div class="current-date" id="currentDate"></div>
+
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+
+        <div id="days-container">
+            <!-- Days will be added dynamically -->
+        </div>
+
+        <div class="footer">
+            <span class="pixel-heart"></span> Made with love <span class="pixel-heart"></span>
+        </div>
+    </div>
+    <audio src="Audio/Audio.m4a"autoplay loop></audio>
+
+    <div class="message-popup" id="messagePopup">Good job smol bunny Day completed!</div>
+
+    <script>
+        // Image files array in order of display - تم تعديل مسارات الصور
+        const bunnyImages = [
+            'Images/IMG_8823.JPEG',
+            'Images/IMG_8824.JPEG',
+            'Images/IMG_8825.JPEG',
+            'Images/IMG_8826.JPEG',
+            'Images/IMG_8827.JPEG',
+            'Images/IMG_8828.JPEG',
+            'Images/IMG_8831.JPEG',
+            'Images/IMG_8832.JPEG',
+            'Images/IMG_8833.JPEG',
+            'Images/IMG_8834.JPEG',
+            'Images/IMG_8835.JPEG',
+            'Images/IMG_8836.JPEG',
+            'Images/IMG_8841.JPEG' // Last image for the last day
+        ];
+
+        // Helper functions
+        function getStoredData() {
+            const storedData = localStorage.getItem('medicineChecklist');
+            return storedData ? JSON.parse(storedData) : [];
+        }
+
+        function saveData(data) {
+            localStorage.setItem('medicineChecklist', JSON.stringify(data));
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function showMessage() {
+            const messagePopup = document.getElementById('messagePopup');
+            messagePopup.classList.add('show');
+            setTimeout(() => {
+                messagePopup.classList.remove('show');
+            }, 2000);
+        }
+
+        function showBunnyImage(dayIndex, dayElement) {
+            // Get or create bunny image element
+            let bunnyImage = dayElement.querySelector('.bunny-image');
+
+            if (!bunnyImage) {
+                bunnyImage = document.createElement('img');
+                bunnyImage.className = 'bunny-image';
+                bunnyImage.src = bunnyImages[dayIndex]; // Use the corresponding image from our array
+                bunnyImage.alt = `Day ${dayIndex + 1} Bunny`;
+                dayElement.appendChild(bunnyImage);
+            }
+
+            // Show the bunny image
+            setTimeout(() => {
+                bunnyImage.classList.add('show');
+            }, 300);
+        }
+
+        function updateProgress() {
+            const data = getStoredData();
+            const totalDoses = 13 * 2; // 13 days, 2 doses per day
+            const completedDoses = data.reduce((total, day) => {
+                return total + (day.morningTaken ? 1 : 0) + (day.eveningTaken ? 1 : 0);
+            }, 0);
+
+            const progressPercent = (completedDoses / totalDoses) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+        }
+
+        // Initialize
+        function init() {
+            const today = new Date();
+            document.getElementById('currentDate').textContent = formatDate(today);
+
+            const daysContainer = document.getElementById('days-container');
+            daysContainer.innerHTML = ''; // Clear existing content
+
+            const data = getStoredData();
+
+            // Create 13 days from today
+            for (let i = 0; i < 13; i++) {
+                const date = new Date();
+                date.setDate(today.getDate() + i);
+
+                // Get or create data for this day
+                let dayData = data.find(d => d.date === formatDate(date));
+                if (!dayData) {
+                    dayData = {
+                        date: formatDate(date),
+                        morningTaken: false,
+                        eveningTaken: false,
+                        completed: false,
+                        dayIndex: i
+                    };
+                    data.push(dayData);
+                }
+
+                const dayElement = createDayElement(dayData, i);
+                daysContainer.appendChild(dayElement);
+
+                // Show bunny image if day is completed
+                if (dayData.morningTaken && dayData.eveningTaken) {
+                    showBunnyImage(i, dayElement);
+                }
+            }
+
+            saveData(data);
+            updateProgress();
+        }
+
+        function createDayElement(dayData, index) {
+            const dayContainer = document.createElement('div');
+            dayContainer.className = 'day-container';
+            dayContainer.dataset.dayIndex = index;
+
+            // Add 'today' class if it's today
+            const today = new Date();
+            const todayStr = formatDate(today);
+            if (dayData.date === todayStr) {
+                dayContainer.classList.add('today');
+            }
+
+            // Add 'completed-day' class if both doses are taken
+            if (dayData.morningTaken && dayData.eveningTaken) {
+                dayContainer.classList.add('completed-day');
+            }
+
+            // Create day header
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-header';
+
+            const dayNumber = document.createElement('span');
+            dayNumber.textContent = `Day ${index + 1}`;
+
+            const dayDate = document.createElement('span');
+            dayDate.textContent = dayData.date;
+
+            dayHeader.appendChild(dayNumber);
+            dayHeader.appendChild(dayDate);
+            dayContainer.appendChild(dayHeader);
+
+            // Create morning dose
+            const morningDose = createDoseElement('Morning', dayData.morningTaken, () => {
+                dayData.morningTaken = !dayData.morningTaken;
+                updateData(dayData, dayContainer, index);
+            });
+            dayContainer.appendChild(morningDose);
+
+            // Create evening dose
+            const eveningDose = createDoseElement('Evening', dayData.eveningTaken, () => {
+                dayData.eveningTaken = !dayData.eveningTaken;
+                updateData(dayData, dayContainer, index);
+            });
+            dayContainer.appendChild(eveningDose);
+
+            return dayContainer;
+        }
+
+        function updateData(dayData, dayContainer, dayIndex) {
+            const data = getStoredData();
+            const dataIndex = data.findIndex(d => d.date === dayData.date);
+
+            if (dataIndex !== -1) {
+                data[dataIndex] = dayData;
+            } else {
+                data.push(dayData);
+            }
+
+            saveData(data);
+            updateDayElement(dayContainer, dayData);
+            updateProgress();
+
+            // Check if day is now completed
+            const dayCompleted = dayData.morningTaken && dayData.eveningTaken;
+            if (dayCompleted && !dayData.completed) {
+                dayData.completed = true;
+                saveData(data);
+                showMessage();
+                showBunnyImage(dayIndex, dayContainer);
+            }
+        }
+
+        function createDoseElement(timeLabel, isChecked, onClickHandler) {
+            const doseElement = document.createElement('div');
+            doseElement.className = 'dose';
+
+            const checkbox = document.createElement('div');
+            checkbox.className = `checkbox ${isChecked ? 'checked' : ''}`;
+            checkbox.addEventListener('click', onClickHandler);
+
+            const doseTime = document.createElement('div');
+            doseTime.className = 'dose-time';
+            doseTime.textContent = timeLabel;
+
+            doseElement.appendChild(checkbox);
+            doseElement.appendChild(doseTime);
+
+            return doseElement;
+        }
+
+        function updateDayElement(dayElement, dayData) {
+            // Update checkbox states
+            const checkboxes = dayElement.querySelectorAll('.checkbox');
+            checkboxes[0].className = `checkbox ${dayData.morningTaken ? 'checked' : ''}`;
+            checkboxes[1].className = `checkbox ${dayData.eveningTaken ? 'checked' : ''}`;
+
+            // Update completed-day class
+            if (dayData.morningTaken && dayData.eveningTaken) {
+                dayElement.classList.add('completed-day');
+            } else {
+                dayElement.classList.remove('completed-day');
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
